@@ -50,15 +50,29 @@ def executar_etl():
                         .str.replace(r"[^a-z0-9_]","",regex=True)
                     )
 
-                    chunck['nome'] = chunck['nome'].str.strip().str.title()
                     chunck_nome_split = chunck['nome'].str.split('.', n=1, expand=True)
-                    chunck['titulo'] = chunck_nome_split[0].str.strip()
-                    chunck['nome'] = np.where(chunck_nome_split[1].isnull(), chunck_nome_split[0], chunck_nome_split[1])
-                    chunck['nome'] = chunck['nome'].str.strip().str.title()
+
+                    # título: se existir coluna [1], pega [0], senão "Não Possui"
+                    chunck['titulo'] = np.where(
+                        chunck_nome_split[1].isna(),  # verifica linha a linha
+                        "Não Possui",
+                        chunck_nome_split[0].str.strip()
+                    )
+
+                    # nome: se existir coluna [1], pega ela, senão mantém original
+                    chunck['nome'] = np.where(
+                        chunck_nome_split[1].isna(),
+                        chunck['nome'],
+                        chunck_nome_split[1].str.strip()
+                    )
+
+                    # capitalização
+                    chunck['nome'] = chunck['nome'].str.title().str.strip()
+
                     chunck['cidade'] = chunck['cidade'].str.strip().str.title()
                     chunck['idade'] = pd.to_numeric(chunck['idade'], errors='coerce')
                     chunck['idade'] = chunck['idade'].fillna(0).astype(int)
-                    chunck['data_nascimento'] = pd.to_datetime(chunck['data_nascimento'], errors='coerce')
+                    chunck['data_nascimento'] = pd.to_datetime(chunck['data_nascimento'], format="%d/%m/%Y", errors='coerce')
                     chunck['dia_nascimento'] = chunck['data_nascimento'].dt.day
                     chunck['mes_nascimento'] = chunck['data_nascimento'].dt.month
                     chunck['ano_nascimento'] = chunck['data_nascimento'].dt.year
